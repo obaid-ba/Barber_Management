@@ -17,7 +17,7 @@
   "description": "",
   "main": "./back/main.js",
   "scripts": {
-    "dev": "nodemon ./back/main.js"
+    "dev": "nodemon ./backend/main.js"
   },
   "keywords": [],
   "author": "",
