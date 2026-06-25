@@ -1,0 +1,313 @@
+@import './base.css';
+
+/* Optional web fonts — fall back gracefully to Georgia/system if offline */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap');
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* ============================ Buttons ============================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%);
+  color: #1a1408;
+  box-shadow: 0 4px 14px rgba(200, 162, 76, 0.25);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #2c313c;
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger-2);
+  border-color: rgba(192, 71, 59, 0.5);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.btn-sm {
+  padding: 7px 13px;
+  font-size: 12.5px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* ============================ Cards ============================ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-title {
+  font-size: 18px;
+  margin-bottom: 18px;
+  color: var(--text);
+}
+
+/* ============================ Forms ============================ */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 11px 13px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft);
+}
+
+select option {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* ============================ Badges ============================ */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.badge.pending,
+.badge.warning {
+  background: rgba(200, 154, 60, 0.15);
+  color: var(--warning);
+  border-color: rgba(200, 154, 60, 0.35);
+}
+
+.badge.confirmed,
+.badge.completed,
+.badge.success {
+  background: rgba(63, 143, 95, 0.18);
+  color: var(--success-2);
+  border-color: rgba(63, 143, 95, 0.4);
+}
+
+.badge.cancelled,
+.badge.danger {
+  background: rgba(192, 71, 59, 0.15);
+  color: var(--danger-2);
+  border-color: rgba(192, 71, 59, 0.4);
+}
+
+.badge.gold {
+  background: var(--gold-soft);
+  color: var(--gold-2);
+  border-color: rgba(200, 162, 76, 0.4);
+}
+
+/* ============================ Tables ============================ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead th {
+  padding: 13px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table tbody td {
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.data-table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+/* ============================ Modal ============================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 9, 12, 0.7);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  padding: 28px;
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.modal h3 {
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+/* ============================ Helpers ============================ */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  font-size: 22px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.error-text {
+  color: var(--danger-2);
+  font-size: 13.5px;
+  margin: 4px 0;
+}
+
+.success-text {
+  color: var(--success-2);
+  font-size: 13.5px;
+  margin: 4px 0;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-faint);
+  padding: 48px 20px;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
