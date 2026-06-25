@@ -182,6 +182,82 @@ export const deleteAppointment = async(req, res) => {
   }
 };
 
+// Client self-service Controllers (logged-in user, any role)
+
+// Returns the appointments belonging to the authenticated user, matched by
+// userId or by the email on their account.
+export const getMyAppointments = async(req, res) => {
+  try {
+    const me = await User.findByPk(req.user.id);
+    if (!me) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const appointments = await Appointment.findAll({
+      where: {
+        [Op.or]: [{ userId: me._id }, { email: me.email }],
+      },
+      order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']],
+    });
+    res.status(200).json({ appointments });
+  } catch (error) {
+    console.error('Error fetching my appointments:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Returns the authenticated user's own profile.
+export const getMe = async(req, res) => {
+  try {
+    const me = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['pwd'] },
+    });
+    if (!me) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ user: me });
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Updates the authenticated user's own profile (and optionally the password).
+export const updateMe = async(req, res) => {
+  try {
+    const { firstName, lastName, phone, email, pwd } = req.body;
+    const me = await User.findByPk(req.user.id);
+    if (!me) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prevent stealing another account's email.
+    if (email && email !== me.email) {
+      const taken = await User.findOne({ where: { email } });
+      if (taken) {
+        return res.status(400).json({ message: 'Email already in use' });
+      }
+      me.email = email;
+    }
+
+    if (firstName !== undefined) me.firstName = firstName;
+    if (lastName !== undefined) me.lastName = lastName;
+    if (phone !== undefined) me.phone = phone;
+    if (pwd) {
+      const salt = await bcrypt.genSalt(10);
+      me.pwd = await bcrypt.hash(pwd, salt);
+    }
+
+    await me.save();
+
+    const data = me.toJSON();
+    delete data.pwd;
+    res.status(200).json({ message: 'Profile updated successfully', user: data });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 // Service Controllers
 export const createService = async(req, res) => {
   try{

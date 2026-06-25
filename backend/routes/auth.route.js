@@ -1,31 +1,36 @@
 import express from 'express';
-import { appointment, getAppointments, updateAppointmentStatus, deleteAppointment, createService, deleteService, getServices, login,logout,signup, updateService, getClients, createClient, updateClient, deleteClient } from '../controllers/auth.controller.js';
-import { verifyToken, requireAdmin } from '../middleware/auth.middleware.js';
+import { appointment, getAppointments, updateAppointmentStatus, deleteAppointment, createService, deleteService, getServices, login,logout,signup, updateService, getClients, createClient, updateClient, deleteClient, getMyAppointments, getMe, updateMe } from '../controllers/auth.controller.js';
+import { verifyToken, requireStaff, attachUser } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// Staff-only: must be logged in as an admin.
-const adminOnly = [verifyToken, requireAdmin];
+// Staff-only: must be logged in as an admin or barber.
+const staffOnly = [verifyToken, requireStaff];
 
 // --- Public routes ---
-router.post("/appointment", appointment); // public booking
+router.post("/appointment", attachUser, appointment); // public booking, links to account when logged in
 router.post("/login", login);
 router.post("/logout", logout);
 router.post("/signup", signup);
 router.get("/services", getServices); // booking page needs the service list
 
-// --- Protected (admin) routes ---
-router.get("/appointments", adminOnly, getAppointments);
-router.put("/appointment/:id/status", adminOnly, updateAppointmentStatus);
-router.delete("/appointment/:id", adminOnly, deleteAppointment);
+// --- Authenticated self-service (any role) ---
+router.get("/me", verifyToken, getMe);
+router.put("/me", verifyToken, updateMe);
+router.get("/me/appointments", verifyToken, getMyAppointments);
 
-router.post("/service", adminOnly, createService);
-router.delete("/service/:id", adminOnly, deleteService);
-router.put("/service/:id", adminOnly, updateService);
+// --- Protected (staff) routes ---
+router.get("/appointments", staffOnly, getAppointments);
+router.put("/appointment/:id/status", staffOnly, updateAppointmentStatus);
+router.delete("/appointment/:id", staffOnly, deleteAppointment);
 
-router.get("/clients", adminOnly, getClients);
-router.post("/client", adminOnly, createClient);
-router.put("/client/:id", adminOnly, updateClient);
-router.delete("/client/:id", adminOnly, deleteClient);
+router.post("/service", staffOnly, createService);
+router.delete("/service/:id", staffOnly, deleteService);
+router.put("/service/:id", staffOnly, updateService);
+
+router.get("/clients", staffOnly, getClients);
+router.post("/client", staffOnly, createClient);
+router.put("/client/:id", staffOnly, updateClient);
+router.delete("/client/:id", staffOnly, deleteClient);
 
 export default router;

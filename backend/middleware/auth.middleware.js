@@ -25,3 +25,27 @@ export const requireAdmin = (req, res, next) => {
   }
   next();
 };
+
+// Requires staff access (admin or barber). Use after verifyToken.
+export const requireStaff = (req, res, next) => {
+  if (req.user?.role !== "admin" && req.user?.role !== "barber") {
+    return res.status(403).json({ message: "Forbidden: staff access required" });
+  }
+  next();
+};
+
+// Optional auth: attaches req.user when a valid token is present, but never
+// blocks the request. Used for public endpoints that behave better when the
+// caller happens to be logged in (e.g. linking a booking to a client account).
+export const attachUser = (req, res, next) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (token) {
+    try {
+      req.user = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
+    } catch {
+      // Ignore invalid token — request continues as anonymous.
+    }
+  }
+  next();
+};
