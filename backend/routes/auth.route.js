@@ -1,5 +1,5 @@
 import express from 'express';
-import { appointment, getAppointments, updateAppointmentStatus, deleteAppointment, createService, deleteService, getServices, login,logout,signup, updateService, getClients, createClient, updateClient, deleteClient, getMyAppointments, getMe, updateMe } from '../controllers/auth.controller.js';
+import { appointment, getAppointments, updateAppointmentStatus, rescheduleAppointment, deleteAppointment, createService, deleteService, getServices, login,logout,signup, updateService, getClients, createClient, updateClient, deleteClient, getMyAppointments, getMe, updateMe } from '../controllers/auth.controller.js';
 import { verifyToken, requireStaff, attachUser } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -22,6 +22,7 @@ router.get("/me/appointments", verifyToken, getMyAppointments);
 // --- Protected (staff) routes ---
 router.get("/appointments", staffOnly, getAppointments);
 router.put("/appointment/:id/status", staffOnly, updateAppointmentStatus);
+router.put("/appointment/:id/reschedule", staffOnly, rescheduleAppointment);
 router.delete("/appointment/:id", staffOnly, deleteAppointment);
 
 router.post("/service", staffOnly, createService);

@@ -71,6 +71,15 @@ export const apiService = {
     return res.json()
   },
 
+  async rescheduleAppointment(id, { appointmentDate, appointmentTime }) {
+    const res = await fetch(`${API_URL}/appointment/${id}/reschedule`, {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify({ appointmentDate, appointmentTime }),
+    })
+    return res.json()
+  },
+
   async deleteAppointment(id) {
     const res = await fetch(`${API_URL}/appointment/${id}`, {
       method: 'DELETE',

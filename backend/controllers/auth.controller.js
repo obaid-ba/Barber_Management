@@ -182,6 +182,53 @@ export const deleteAppointment = async(req, res) => {
   }
 };
 
+// Moves an appointment to a new date/time (used by the drag-and-drop calendar).
+// Double-booking is allowed but reported back via `conflict` so the UI can warn.
+export const rescheduleAppointment = async(req, res) => {
+  try {
+    const { id } = req.params;
+    const { appointmentDate, appointmentTime } = req.body;
+    if (!appointmentDate || !appointmentTime) {
+      return res.status(400).json({ message: 'appointmentDate and appointmentTime are required' });
+    }
+
+    const appt = await Appointment.findByPk(id);
+    if (!appt) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
+    const dateObj = new Date(appointmentDate);
+    if (isNaN(dateObj.getTime())) {
+      return res.status(400).json({ message: 'Invalid appointmentDate' });
+    }
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    // Is another (non-cancelled) appointment already in this exact slot?
+    const conflict = await Appointment.findOne({
+      where: {
+        _id: { [Op.ne]: appt._id },
+        appointmentDate: dateObj,
+        appointmentTime,
+        status: { [Op.ne]: 'Cancelled' },
+      },
+    });
+
+    appt.appointmentDate = dateObj;
+    appt.appointmentDay = days[dateObj.getDay()];
+    appt.appointmentTime = appointmentTime;
+    await appt.save();
+
+    res.status(200).json({
+      message: 'Appointment rescheduled successfully',
+      appointment: appt,
+      conflict: Boolean(conflict),
+    });
+  } catch (error) {
+    console.error('Error rescheduling appointment:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 // Client self-service Controllers (logged-in user, any role)
 
 // Returns the appointments belonging to the authenticated user, matched by

@@ -36,11 +36,25 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     }
   }
 
+  // Moves an appointment to a new date/time. Returns the API response so the
+  // caller can react (e.g. show a double-booking warning via `conflict`).
+  const rescheduleAppointment = async (id, { appointmentDate, appointmentTime }) => {
+    try {
+      const data = await apiService.rescheduleAppointment(id, { appointmentDate, appointmentTime })
+      await fetchAppointments()
+      return data
+    } catch (error) {
+      console.error('Reschedule error:', error)
+      return null
+    }
+  }
+
   return {
     pendingAppointments,
     confirmedAppointments,
     fetchAppointments,
     acceptAppointment,
     rejectAppointment,
+    rescheduleAppointment,
   }
 })
