@@ -80,6 +80,15 @@ export const apiService = {
     return res.json()
   },
 
+  async reorderAppointments(orderedIds) {
+    const res = await fetch(`${API_URL}/appointments/reorder`, {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify({ orderedIds }),
+    })
+    return res.json()
+  },
+
   async deleteAppointment(id) {
     const res = await fetch(`${API_URL}/appointment/${id}`, {
       method: 'DELETE',

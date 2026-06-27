@@ -4,20 +4,32 @@
 
     <div v-if="pendingList.length === 0" class="no-requests">Aucune demande en attente</div>
 
-    <div v-else class="appointments-simple-list">
-      <div
-        v-for="appointment in pendingList"
-        :key="appointment.id"
-        class="appointment-row"
-        @click="openModal(appointment)"
-      >
-        <div class="appointment-info">
-          <p class="client-name">{{ appointment.firstName }} {{ appointment.lastName }}</p>
-          <p class="appointment-time">{{ new Date(appointment.appointmentDate).toLocaleDateString() }} à {{ appointment.appointmentTime }}</p>
+    <template v-else>
+      <p class="drag-hint">Glissez-déposez une demande pour changer l'ordre.</p>
+
+      <div class="appointments-simple-list">
+        <div
+          v-for="(appointment, index) in pendingList"
+          :key="appointment._id"
+          class="appointment-row"
+          :class="{ dragging: draggedIndex === index, 'drag-over': dragOverIndex === index }"
+          draggable="true"
+          @dragstart="onDragStart(index, $event)"
+          @dragover.prevent="onDragOver(index)"
+          @dragleave="onDragLeave(index)"
+          @drop.prevent="onDrop(index)"
+          @dragend="onDragEnd"
+          @click="openModal(appointment)"
+        >
+          <span class="drag-handle" aria-hidden="true">⋮⋮</span>
+          <div class="appointment-info">
+            <p class="client-name">{{ appointment.firstName }} {{ appointment.lastName }}</p>
+            <p class="appointment-time">{{ new Date(appointment.appointmentDate).toLocaleDateString() }} à {{ appointment.appointmentTime }}</p>
+          </div>
+          <span class="service-badge">{{ appointment.service || 'Service' }}</span>
         </div>
-        <span class="service-badge">{{ appointment.service || 'Service' }}</span>
       </div>
-    </div>
+    </template>
 
     <!-- Modal -->
     <div v-if="selectedAppointment" class="modal-overlay" @click="closeModal">
@@ -89,6 +101,43 @@ onMounted(() => {
   store.fetchAppointments()
 })
 
+// --- Drag-and-drop reordering of the pending list ---
+const draggedIndex = ref(null)
+const dragOverIndex = ref(null)
+
+const onDragStart = (index, event) => {
+  draggedIndex.value = index
+  event.dataTransfer.effectAllowed = 'move'
+  // Required for Firefox to start the drag.
+  event.dataTransfer.setData('text/plain', String(index))
+}
+
+const onDragOver = (index) => {
+  dragOverIndex.value = index
+}
+
+const onDragLeave = (index) => {
+  if (dragOverIndex.value === index) dragOverIndex.value = null
+}
+
+const onDrop = (targetIndex) => {
+  const from = draggedIndex.value
+  if (from === null || from === targetIndex) return
+
+  const ids = pendingList.value.map((a) => a._id)
+  const [moved] = ids.splice(from, 1)
+  ids.splice(targetIndex, 0, moved)
+
+  store.reorderPendingAppointments(ids)
+  draggedIndex.value = null
+  dragOverIndex.value = null
+}
+
+const onDragEnd = () => {
+  draggedIndex.value = null
+  dragOverIndex.value = null
+}
+
 const selectedAppointment = ref(null)
 const showRejectConfirm = ref(false)
 
@@ -139,6 +188,12 @@ const confirmReject = () => {
   font-size: 14px;
 }
 
+.drag-hint {
+  margin: 0 0 12px 0;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
 .appointments-simple-list {
   display: grid;
   gap: 10px;
@@ -148,16 +203,39 @@ const confirmReject = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 15px;
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    opacity 0.2s;
 }
 
 .appointment-row:hover {
   border-color: var(--gold);
+  background: var(--surface-2);
+}
+
+.drag-handle {
+  color: var(--text-faint);
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: -2px;
+  cursor: grab;
+  user-select: none;
+}
+
+.appointment-row.dragging {
+  opacity: 0.5;
+}
+
+.appointment-row.drag-over {
+  border-color: var(--gold);
+  border-style: dashed;
   background: var(--surface-2);
 }
 

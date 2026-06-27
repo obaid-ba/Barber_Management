@@ -36,6 +36,20 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     }
   }
 
+  // Reorders the pending list. Updates the local order immediately (optimistic)
+  // and persists the new order to the backend; reverts on failure.
+  const reorderPendingAppointments = async (orderedIds) => {
+    const previous = pendingAppointments.value
+    const byId = new Map(previous.map((a) => [a._id, a]))
+    pendingAppointments.value = orderedIds.map((id) => byId.get(id)).filter(Boolean)
+    try {
+      await apiService.reorderAppointments(orderedIds)
+    } catch (error) {
+      console.error('Reorder error:', error)
+      pendingAppointments.value = previous
+    }
+  }
+
   // Moves an appointment to a new date/time. Returns the API response so the
   // caller can react (e.g. show a double-booking warning via `conflict`).
   const rescheduleAppointment = async (id, { appointmentDate, appointmentTime }) => {
@@ -55,6 +69,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     fetchAppointments,
     acceptAppointment,
     rejectAppointment,
+    reorderPendingAppointments,
     rescheduleAppointment,
   }
 })

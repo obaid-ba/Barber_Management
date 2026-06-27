@@ -3,6 +3,7 @@ import {Appointment} from "../models/appointment.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Service } from "../models/service.model.js";
+import { sequelize } from "../db/connectDB.js";
 import { Op } from "sequelize";
 
 
@@ -139,11 +140,36 @@ export const appointment = async(req, res) => {
 export const getAppointments = async(req, res) => {
   try {
     const appointments = await Appointment.findAll({
-      order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']],
+      order: [['sortOrder', 'ASC'], ['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']],
     });
     res.status(200).json({ appointments });
   } catch (error) {
     console.error('Error fetching appointments:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Persists a manual ordering for the pending-requests list. Expects
+// `{ orderedIds: [id, id, ...] }` in the new top-to-bottom order; each
+// appointment's `sortOrder` is set to its index in that array.
+export const reorderAppointments = async(req, res) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      return res.status(400).json({ message: 'orderedIds must be a non-empty array' });
+    }
+
+    await sequelize.transaction(async (t) => {
+      await Promise.all(
+        orderedIds.map((id, index) =>
+          Appointment.update({ sortOrder: index }, { where: { _id: id }, transaction: t })
+        )
+      );
+    });
+
+    res.status(200).json({ message: 'Appointments reordered successfully' });
+  } catch (error) {
+    console.error('Error reordering appointments:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };

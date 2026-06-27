@@ -15,6 +15,7 @@ export const Appointment = sequelize.define(
     appointmentTime: { type: DataTypes.STRING }, // 09:00, 10:00, etc.
     service: { type: DataTypes.STRING },
     message: { type: DataTypes.STRING },
+    sortOrder: { type: DataTypes.INTEGER, defaultValue: 0 }, // manual ordering for the pending-requests list
     status: {
       type: DataTypes.ENUM("Pending", "Confirmed", "Cancelled"),
       defaultValue: "Pending",

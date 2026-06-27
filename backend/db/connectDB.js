@@ -21,6 +21,11 @@ export const connectDB = async () => {
     console.log("PostgreSQL connected :)", process.env.PG_HOST || "localhost");
     // Creates the tables if they don't exist yet.
     await sequelize.sync();
+    // Idempotently add columns introduced after the table was first created.
+    // (Plain ALTER ... IF NOT EXISTS avoids the ENUM issues that `sync({ alter: true })` hits on Postgres.)
+    await sequelize.query(
+      'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS "sortOrder" INTEGER DEFAULT 0;'
+    );
     console.log("Models synced");
     await seedAdmin();
   } catch (error) {
