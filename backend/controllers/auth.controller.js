@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { Service } from "../models/service.model.js";
 import { sequelize } from "../db/connectDB.js";
 import { Op } from "sequelize";
+import { SCHEDULE, generateSlots, isValidSlot } from "../config/schedule.js";
 
 
 
@@ -97,18 +98,25 @@ export const appointment = async(req, res) => {
     //   return res.status(400).json({message: 'All fields are required'})
     // }
     const day = new Date(appointmentDate)
+    if (isNaN(day.getTime())) {
+      return res.status(400).json({ message: 'Invalid appointment date' })
+    }
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const appointmentDay = days[day.getDay()];
-    //Check if time slot is available
-    const existingAppointment = await Appointment.findOne({
+    // The chosen time must be one of the configured slots.
+    if (!isValidSlot(appointmentTime)) {
+      return res.status(400).json({ message: 'Invalid time slot' })
+    }
+    // The slot is available while fewer than SLOT_CAPACITY appointments share it.
+    const bookedCount = await Appointment.count({
       where: {
         appointmentDate: day,
         appointmentTime,
         status: { [Op.ne]: 'Cancelled' },
       },
     });
-    if(existingAppointment){
-      return res.status(400).json({message: 'This Time is already booked, please choose another time slot'})
+    if (bookedCount >= SCHEDULE.SLOT_CAPACITY) {
+      return res.status(400).json({ message: 'This time slot is full, please choose another time slot' })
     }
     // Link to an existing client account: the logged-in user, or a user matching the email.
     let userId = req.user?.id || null;
@@ -133,6 +141,46 @@ export const appointment = async(req, res) => {
     res.status(201).json({message: 'Appointment created successfully', appointment: newAppointment});
   }catch (error) {
     console.error('Error creating user appointment:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Returns the bookable slots for a given date with how many seats remain in
+// each, so the booking page can show only the slots that still have room.
+// Query: ?date=YYYY-MM-DD
+export const getAvailability = async(req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ message: 'date query parameter is required' });
+    }
+    const day = new Date(date);
+    if (isNaN(day.getTime())) {
+      return res.status(400).json({ message: 'Invalid date' });
+    }
+
+    // Count every non-cancelled appointment on that day, grouped by slot.
+    const appts = await Appointment.findAll({
+      where: {
+        appointmentDate: day,
+        status: { [Op.ne]: 'Cancelled' },
+      },
+      attributes: ['appointmentTime'],
+    });
+    const counts = {};
+    for (const a of appts) {
+      counts[a.appointmentTime] = (counts[a.appointmentTime] || 0) + 1;
+    }
+
+    const capacity = SCHEDULE.SLOT_CAPACITY;
+    const slots = generateSlots().map((time) => {
+      const booked = counts[time] || 0;
+      return { time, booked, capacity, available: booked < capacity };
+    });
+
+    res.status(200).json({ date, capacity, slots });
+  } catch (error) {
+    console.error('Error fetching availability:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };

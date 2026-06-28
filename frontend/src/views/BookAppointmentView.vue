@@ -25,7 +25,16 @@
             </div>
             <div class="form-group">
               <label>Heure</label>
-              <input v-model="form.appointmentTime" type="time" required />
+              <select
+                v-model="form.appointmentTime"
+                required
+                :disabled="!form.appointmentDate || loadingSlots"
+              >
+                <option value="" disabled>{{ slotPlaceholder }}</option>
+                <option v-for="s in availableSlots" :key="s.time" :value="s.time">
+                  {{ s.time }} — {{ s.capacity - s.booked }} place(s) restante(s)
+                </option>
+              </select>
             </div>
           </div>
 
@@ -47,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '@/components/DashboardLayout.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -62,11 +71,21 @@ const error = ref('')
 const success = ref('')
 const today = new Date().toISOString().split('T')[0]
 
+const availableSlots = ref([]) // only slots that still have room, for the chosen date
+const loadingSlots = ref(false)
+
 const form = ref({
   appointmentDate: '',
   appointmentTime: '',
   service: '',
   message: '',
+})
+
+const slotPlaceholder = computed(() => {
+  if (!form.value.appointmentDate) return "Choisissez d'abord une date"
+  if (loadingSlots.value) return 'Chargement des créneaux...'
+  if (availableSlots.value.length === 0) return 'Aucun créneau disponible ce jour'
+  return 'Choisir un horaire'
 })
 
 const fetchServices = async () => {
@@ -77,6 +96,24 @@ const fetchServices = async () => {
     console.error('Error fetching services:', e)
   }
 }
+
+// Loads the free slots for the selected date and keeps only the available ones.
+const fetchAvailability = async () => {
+  form.value.appointmentTime = '' // reset selection when the date changes
+  availableSlots.value = []
+  if (!form.value.appointmentDate) return
+  loadingSlots.value = true
+  try {
+    const data = await apiService.getAvailability(form.value.appointmentDate)
+    availableSlots.value = (data.slots || []).filter((s) => s.available)
+  } catch (e) {
+    console.error('Error fetching availability:', e)
+  } finally {
+    loadingSlots.value = false
+  }
+}
+
+watch(() => form.value.appointmentDate, fetchAvailability)
 
 const submit = async () => {
   error.value = ''
@@ -97,6 +134,7 @@ const submit = async () => {
       setTimeout(() => router.push('/my-appointments'), 1200)
     } else {
       error.value = data.message || 'Impossible de créer le rendez-vous'
+      await fetchAvailability() // slot may have filled up — refresh the list
     }
   } catch (e) {
     console.error('Error booking:', e)

@@ -1,5 +1,5 @@
 import express from 'express';
-import { appointment, getAppointments, updateAppointmentStatus, reorderAppointments, rescheduleAppointment, deleteAppointment, createService, deleteService, getServices, login,logout,signup, updateService, getClients, createClient, updateClient, deleteClient, getMyAppointments, getMe, updateMe } from '../controllers/auth.controller.js';
+import { appointment, getAvailability, getAppointments, updateAppointmentStatus, reorderAppointments, rescheduleAppointment, deleteAppointment, createService, deleteService, getServices, login,logout,signup, updateService, getClients, createClient, updateClient, deleteClient, getMyAppointments, getMe, updateMe } from '../controllers/auth.controller.js';
 import { verifyToken, requireStaff, attachUser } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -13,6 +13,7 @@ router.post("/login", login);
 router.post("/logout", logout);
 router.post("/signup", signup);
 router.get("/services", getServices); // booking page needs the service list
+router.get("/availability", getAvailability); // booking page needs free slots for a date
 
 // --- Authenticated self-service (any role) ---
 router.get("/me", verifyToken, getMe);

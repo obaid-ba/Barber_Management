@@ -47,6 +47,14 @@ export const apiService = {
     return res.json()
   },
 
+  // Availability — free slots for a given date (YYYY-MM-DD)
+  async getAvailability(date) {
+    const res = await fetch(`${API_URL}/availability?date=${encodeURIComponent(date)}`, {
+      headers: headers(),
+    })
+    return res.json()
+  },
+
   // Appointments
   async getAppointments() {
     const res = await fetch(`${API_URL}/appointments`, { headers: headers() })

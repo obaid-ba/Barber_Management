@@ -31,6 +31,13 @@
           @drop="onDrop(day, slot)"
         >
           <div
+            v-if="(appointmentsByCell[cellKey(day.date, slot)] || []).length"
+            class="cell-count"
+            :class="{ full: (appointmentsByCell[cellKey(day.date, slot)] || []).length >= SLOT_CAPACITY }"
+          >
+            {{ (appointmentsByCell[cellKey(day.date, slot)] || []).length }}/{{ SLOT_CAPACITY }}
+          </div>
+          <div
             v-for="appointment in appointmentsByCell[cellKey(day.date, slot)] || []"
             :key="appointment._id"
             class="appointment-item"
@@ -113,10 +120,12 @@ import { useAppointmentsStore } from '@/stores/appointments'
 const store = useAppointmentsStore()
 const currentDate = ref(new Date())
 
-// --- Time grid configuration: 09:00 → 18:00 in 30-minute slots ---
+// --- Time grid configuration: 09:00 → 18:00 in 1-hour slots ---
+// Keep these in sync with backend/config/schedule.js.
 const START_MIN = 9 * 60 // 09:00
 const END_MIN = 18 * 60 // 18:00 (exclusive end of the last slot)
-const STEP_MIN = 30
+const STEP_MIN = 60 // one appointment = 1 hour → 9 slots per day
+const SLOT_CAPACITY = 3 // how many appointments may share the same slot
 
 onMounted(() => {
   store.fetchAppointments()
@@ -254,12 +263,12 @@ async function onDrop(day, slot) {
     return
   }
 
-  // Warn (but allow) if the target slot is already taken by someone else.
+  // Warn (but allow) only if the target slot is already full.
   const occupants = (appointmentsByCell.value[cellKey(day.date, slot)] || []).filter((a) => a._id !== id)
-  if (occupants.length > 0) {
+  if (occupants.length >= SLOT_CAPACITY) {
     const names = occupants.map((a) => `${a.firstName} ${a.lastName}`).join(', ')
     const ok = window.confirm(
-      `Le créneau ${day.name} ${day.date} à ${slot} est déjà pris par : ${names}.\nVoulez-vous quand même déplacer le rendez-vous ici ?`,
+      `Le créneau ${day.name} ${day.date} à ${slot} est complet (${occupants.length}/${SLOT_CAPACITY}) : ${names}.\nVoulez-vous quand même déplacer le rendez-vous ici ?`,
     )
     if (!ok) {
       draggedId.value = null
@@ -389,6 +398,24 @@ function nextWeek() {
   background: color-mix(in srgb, var(--gold) 22%, var(--bg-2));
   outline: 2px dashed var(--gold);
   outline-offset: -2px;
+}
+
+.cell-count {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-bottom: 4px;
+}
+
+.cell-count.full {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.12);
 }
 
 .appointment-item {
